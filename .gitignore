@@ -1,0 +1,8 @@
+.venv/
+__pycache__/
+*.pyc
+backend/rag/faiss_index/
+backend/rag/chroma_db/
+*.pdf
+!backend/tests/*.pdf
+chroma_db/
