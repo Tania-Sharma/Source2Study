@@ -15,3 +15,5 @@ chroma_db/
 !.env.example
 
 uploads/
+*.db
+frontend/node_modules/
