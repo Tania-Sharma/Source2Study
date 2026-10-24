@@ -6,3 +6,6 @@ backend/rag/chroma_db/
 *.pdf
 !backend/tests/*.pdf
 chroma_db/
+.env
+.env.*
+!.env.example
