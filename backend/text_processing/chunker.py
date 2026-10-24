@@ -2,27 +2,24 @@ def chunk_text(text, chunk_size=200, chunk_overlap=30):
     """
     Split cleaned text into overlapping, word-boundary-safe chunks.
 
-    NOTE ON chunk_size: This is a word count, not a guaranteed-safe
-    token limit for any specific embedding model. 200 words is a
-    reasonable RAG starting point, but the actual safe size should be
-    verified against Member 2's chosen embedding model/tokenizer
-    during integration. Words and tokens are not the same thing.
+    NOTE:
+        chunk_size is a word count, not a guaranteed-safe token limit
+        for a specific embedding model. The final chunk size should be
+        verified against the embedding model/tokenizer during integration.
 
     Args:
-        text (str): Cleaned text (already processed by text_cleaner).
+        text (str): Cleaned text.
         chunk_size (int): Target number of words per chunk.
-        chunk_overlap (int): Number of words repeated between
-            consecutive chunks, to preserve context across boundaries.
+        chunk_overlap (int): Number of overlapping words between chunks.
 
     Returns:
-        list[dict]: A list of chunks, each with:
-            - "chunk_index" (int): 0-based position of this chunk.
-            - "text" (str): The chunk's text content.
-            - "word_count" (int): Number of words in this chunk.
+        list[dict]: List of chunks containing:
+            - chunk_index
+            - text
+            - word_count
 
     Raises:
-        ValueError: If text is not a string, or if chunk_size/overlap
-            are invalid (e.g. non-positive, or overlap >= chunk_size).
+        ValueError: If text or chunk parameters are invalid.
     """
 
     if not isinstance(text, str):
@@ -43,7 +40,6 @@ def chunk_text(text, chunk_size=200, chunk_overlap=30):
     words = text.split()
 
     if len(words) <= chunk_size:
-        # Entire text fits in a single chunk; no need to loop.
         return [{
             "chunk_index": 0,
             "text": " ".join(words),
@@ -53,10 +49,10 @@ def chunk_text(text, chunk_size=200, chunk_overlap=30):
     chunks = []
     start = 0
     chunk_index = 0
-    step = chunk_size - chunk_overlap  # how far we advance each time
+    step = chunk_size - chunk_overlap
 
     while start < len(words):
-        end = start + chunk_size
+        end = min(start + chunk_size, len(words))
         chunk_words = words[start:end]
 
         chunks.append({
@@ -66,6 +62,11 @@ def chunk_text(text, chunk_size=200, chunk_overlap=30):
         })
 
         chunk_index += 1
+
+        # Stop once the current chunk has reached the end.
+        if end == len(words):
+            break
+
         start += step
 
     return chunks
