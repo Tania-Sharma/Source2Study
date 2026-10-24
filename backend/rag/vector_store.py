@@ -19,11 +19,14 @@ _vector_store = None
 
 
 def _chunks_to_documents(chunks):
-    """Convert Member 1's chunk dicts into LangChain Document objects."""
-    return [
-        Document(page_content=c["text"], metadata=c["metadata"])
-        for c in chunks
-    ]
+    """Convert chunk dicts into LangChain Document objects."""
+    docs = []
+    for c in chunks:
+        meta = dict(c.get("metadata", {}))
+        if "chunk_id" in c and "chunk_id" not in meta:
+            meta["chunk_id"] = c["chunk_id"]
+        docs.append(Document(page_content=c["text"], metadata=meta))
+    return docs
 
 
 def _load_existing():
@@ -36,12 +39,28 @@ def _load_existing():
     return None
 
 
+def _get_existing_chunk_identifiers(store):
+    """Collect identifiers of existing chunks in the vector store."""
+    if store is None or not hasattr(store, "docstore"):
+        return set()
+    existing = set()
+    for doc in store.docstore._dict.values():
+        if hasattr(doc, "metadata") and doc.metadata:
+            cid = doc.metadata.get("chunk_id")
+            if cid:
+                existing.add(cid)
+            elif doc.metadata.get("resource_id") and "chunk_index" in doc.metadata:
+                existing.add(f"{doc.metadata['resource_id']}_{doc.metadata['chunk_index']}")
+    return existing
+
+
 def add_chunks(chunks):
     """
     Embed and store chunks in the FAISS vector store.
+    Prevents duplicate indexing if the same resource/chunks are indexed multiple times.
 
     Args:
-        chunks (list[dict]): Output of Member 1's build_chunks_from_pdf().
+        chunks (list[dict]): Output of chunk builders.
             Each chunk must have "text" and "metadata".
 
     Raises:
@@ -52,11 +71,26 @@ def add_chunks(chunks):
     if not chunks:
         raise ValueError("chunks must be a non-empty list.")
 
-    documents = _chunks_to_documents(chunks)
     embedding_model = get_embedding_model()
 
     if _vector_store is None:
         _vector_store = _load_existing()
+
+    existing_ids = _get_existing_chunk_identifiers(_vector_store)
+    new_chunks = []
+    for c in chunks:
+        cid = c.get("chunk_id")
+        if not cid and c.get("metadata"):
+            cid = f"{c['metadata'].get('resource_id')}_{c['metadata'].get('chunk_index')}"
+        if cid and cid in existing_ids:
+            continue
+        new_chunks.append(c)
+
+    if not new_chunks:
+        # All chunks already indexed
+        return
+
+    documents = _chunks_to_documents(new_chunks)
 
     if _vector_store is None:
         _vector_store = FAISS.from_documents(documents, embedding_model)
@@ -111,14 +145,14 @@ def count():
 
 
 if __name__ == "__main__":
-    # Quick manual check: run "python vector_store.py" from the rag/ folder,
-    # or "python -m backend.rag.vector_store" from the project root.
     dummy_chunks = [
         {
+            "chunk_id": "demo_test_01",
             "text": "The mitochondria is the powerhouse of the cell.",
             "metadata": {"source_name": "bio.pdf", "page_number": 1, "resource_id": "test"},
         },
         {
+            "chunk_id": "demo_test_02",
             "text": "Newton's second law states F equals mass times acceleration.",
             "metadata": {"source_name": "physics.pdf", "page_number": 3, "resource_id": "test"},
         },

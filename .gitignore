@@ -5,9 +5,9 @@ venv/
 
 # Python cache files
 __pycache__/
-*.py[cod]
+<<<<<<< HEAD
 
-# Test cache
+*.py[cod]
 .pytest_cache/
 
 # Environment variables and secrets
@@ -20,6 +20,22 @@ backend/rag/faiss_index/
 backend/rag/chroma_db/
 chroma_db/
 
+# PDF files
+*.pdf
+!backend/tests/*.pdf
+
+
+>>>>>>> origin/main
+.env
+.env.*
+!.env.example
+
+<<<<<<< HEAD
+# RAG databases and indexes
+backend/rag/faiss_index/
+backend/rag/chroma_db/
+chroma_db/
+
 # Uploaded files
 uploads/
 
@@ -27,3 +43,8 @@ uploads/
 *.pdf
 !backend/tests/*.pdf
 
+=======
+uploads/
+*.db
+frontend/node_modules/
+>>>>>>> origin/main

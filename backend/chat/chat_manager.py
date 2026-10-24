@@ -1,15 +1,25 @@
-
 from backend.chat.conversation import Conversation
 from backend.chat.history import ConversationHistory
 from backend.ai.qa import answer_conversational_question
+
+try:
+    from backend.database.db import SessionLocal, init_db
+    from backend.database import crud
+    _HAS_DB = True
+except Exception:
+    _HAS_DB = False
 
 
 class ChatManager:
     """Manage conversations and process questions using RAG and an LLM."""
 
     def __init__(self):
-        # Temporary in-memory storage; database integration comes later.
         self.conversations = {}
+        if _HAS_DB:
+            try:
+                init_db()
+            except Exception:
+                pass
 
     def create_conversation(
         self,
@@ -37,12 +47,49 @@ class ChatManager:
         )
 
         self.conversations[conversation_id] = conversation
+
+        if _HAS_DB:
+            try:
+                with SessionLocal() as db:
+                    if not crud.get_conversation(db, conversation_id):
+                        crud.create_conversation(
+                            db=db,
+                            conversation_id=conversation_id,
+                            user_id=user_id,
+                            resource_id=resource_id,
+                            title=title,
+                        )
+            except Exception:
+                pass
+
         return conversation
 
     def get_conversation(self, conversation_id: str) -> Conversation:
         """Retrieve a conversation using its ID."""
 
         if conversation_id not in self.conversations:
+            if _HAS_DB:
+                try:
+                    with SessionLocal() as db:
+                        model = crud.get_conversation(db, conversation_id)
+                        if model:
+                            conv = Conversation(
+                                conversation_id=model.id,
+                                user_id=model.user_id,
+                                resource_id=model.resource_id,
+                                title=model.title,
+                            )
+                            for m in model.messages:
+                                conv.messages.append({
+                                    "role": m.role,
+                                    "content": m.content,
+                                    "created_at": m.created_at,
+                                })
+                            self.conversations[conversation_id] = conv
+                            return conv
+                except Exception:
+                    pass
+
             raise ValueError("Conversation not found.")
 
         return self.conversations[conversation_id]
@@ -57,16 +104,52 @@ class ChatManager:
 
         conversation = self.get_conversation(conversation_id)
 
-        return conversation.add_message(
+        msg = conversation.add_message(
             role=role,
             content=content,
         )
+
+        if _HAS_DB:
+            try:
+                with SessionLocal() as db:
+                    crud.add_message(
+                        db=db,
+                        conversation_id=conversation_id,
+                        role=role,
+                        content=content,
+                    )
+            except Exception:
+                pass
+
+        return msg
 
     def list_conversations(
         self,
         user_id: str | None = None,
     ) -> list[dict]:
         """Return conversation details, optionally filtered by user."""
+
+        if _HAS_DB:
+            try:
+                with SessionLocal() as db:
+                    models = crud.list_conversations(db, user_id=user_id)
+                    for model in models:
+                        if model.id not in self.conversations:
+                            conv = Conversation(
+                                conversation_id=model.id,
+                                user_id=model.user_id,
+                                resource_id=model.resource_id,
+                                title=model.title,
+                            )
+                            for m in model.messages:
+                                conv.messages.append({
+                                    "role": m.role,
+                                    "content": m.content,
+                                    "created_at": m.created_at,
+                                })
+                            self.conversations[model.id] = conv
+            except Exception:
+                pass
 
         conversations = self.conversations.values()
 
@@ -91,12 +174,19 @@ class ChatManager:
         ]
 
     def delete_conversation(self, conversation_id: str) -> None:
-        """Delete a conversation from in-memory storage."""
+        """Delete a conversation from in-memory storage and database."""
 
         if conversation_id not in self.conversations:
             raise ValueError("Conversation not found.")
 
         del self.conversations[conversation_id]
+
+        if _HAS_DB:
+            try:
+                with SessionLocal() as db:
+                    crud.delete_conversation(db, conversation_id)
+            except Exception:
+                pass
 
     def chat(
         self,
@@ -162,13 +252,15 @@ class ChatManager:
         if not isinstance(sources, list):
             sources = []
 
-        # Save the completed conversation turn.
-        conversation.add_message(
+        # Save the completed conversation turn (persists both in memory and DB).
+        self.add_message(
+            conversation_id=conversation_id,
             role="user",
             content=question,
         )
 
-        conversation.add_message(
+        self.add_message(
+            conversation_id=conversation_id,
             role="assistant",
             content=answer.strip(),
         )
