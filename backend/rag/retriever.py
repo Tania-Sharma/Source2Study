@@ -7,7 +7,7 @@ stored chunks from the FAISS vector store (backend.rag.vector_store).
 from backend.rag.vector_store import search
 
 
-def retrieve(query, top_k=5):
+def retrieve(query, top_k=5, resource_id=None):
     """
     Retrieve the top_k most relevant chunks for a user query.
 
@@ -24,7 +24,7 @@ def retrieve(query, top_k=5):
     if not isinstance(query, str) or not query.strip():
         raise ValueError("query must be a non-empty string.")
 
-    return search(query, top_k=top_k)
+    return search(query, top_k=top_k, resource_id=resource_id)
 
 
 if __name__ == "__main__":

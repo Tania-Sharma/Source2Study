@@ -87,6 +87,22 @@ def get_conversation(conversation_id: str):
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
+
+class RenameConversationRequest(BaseModel):
+    title: str = Field(min_length=1)
+
+
+@router.patch("/conversation/{conversation_id}")
+def rename_conversation(conversation_id: str, request: RenameConversationRequest):
+    """
+    Rename an existing conversation.
+    """
+    try:
+        updated = chat_manager.rename_conversation(conversation_id, request.title)
+        return updated
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
 @router.delete("/conversation/{conversation_id}")
 def delete_conversation(conversation_id: str):
     """

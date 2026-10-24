@@ -188,6 +188,28 @@ class ChatManager:
             except Exception:
                 pass
 
+    def rename_conversation(self, conversation_id: str, title: str) -> dict:
+        """Rename a conversation in-memory and database."""
+        if not isinstance(title, str) or not title.strip():
+            raise ValueError("title must be a non-empty string.")
+
+        conversation = self.get_conversation(conversation_id)
+        conversation.title = title.strip()
+
+        if _HAS_DB:
+            try:
+                with SessionLocal() as db:
+                    crud.update_conversation_title(db, conversation_id, title.strip())
+            except Exception:
+                pass
+
+        return {
+            "conversation_id": conversation.conversation_id,
+            "title": conversation.title,
+            "user_id": conversation.user_id,
+            "resource_id": conversation.resource_id,
+        }
+
     def chat(
         self,
         conversation_id: str,
@@ -226,7 +248,10 @@ class ChatManager:
         ).build_llm_history(limit=10)
 
         # Retrieve relevant resource chunks.
-        retrieved_chunks = retriever(question, top_k=top_k)
+        try:
+            retrieved_chunks = retriever(question, top_k=top_k, resource_id=conversation.resource_id)
+        except TypeError:
+            retrieved_chunks = retriever(question, top_k=top_k)
 
         if not isinstance(retrieved_chunks, list):
             raise ValueError("retriever must return a list.")

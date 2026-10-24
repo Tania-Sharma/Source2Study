@@ -1,10 +1,11 @@
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
-from backend.database.db import init_db
+from backend.database.db import init_db, get_db
+from backend.database import crud
 from backend.api.chat_api import router as chat_router
 from backend.api.learning_api import router as learning_router
 from backend.api.resource_api import router as resource_router
@@ -78,6 +79,10 @@ def root():
         },
     }
 
+
+@app.get("/dashboard/overview")
+def dashboard_overview(db = Depends(get_db)):
+    return crud.get_dashboard_overview_data(db)
 
 @app.get("/health")
 def health():

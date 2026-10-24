@@ -1,13 +1,11 @@
-
 # Python virtual environment
 .venv/
 venv/
 
-# Python cache files
+# Python cache and testing files
 __pycache__/
-<<<<<<< HEAD
-
 *.py[cod]
+*$py.class
 .pytest_cache/
 
 # Environment variables and secrets
@@ -15,36 +13,28 @@ __pycache__/
 .env.*
 !.env.example
 
-# RAG databases and indexes
-backend/rag/faiss_index/
-backend/rag/chroma_db/
-chroma_db/
-
-# PDF files
-*.pdf
-!backend/tests/*.pdf
-
-
->>>>>>> origin/main
-.env
-.env.*
-!.env.example
-
-<<<<<<< HEAD
-# RAG databases and indexes
-backend/rag/faiss_index/
-backend/rag/chroma_db/
-chroma_db/
+# SQLite Databases
+*.db
+*.sqlite
+*.sqlite3
 
 # Uploaded files
 uploads/
+backend/uploads/
 
-# PDF files: ignore all except test PDFs
-*.pdf
-!backend/tests/*.pdf
+# RAG databases and indexes
+backend/rag/faiss_index/
+backend/rag/chroma_db/
+chroma_db/
 
-=======
-uploads/
-*.db
+# Frontend dependencies and logs
 frontend/node_modules/
->>>>>>> origin/main
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# PDF and test file exceptions
+*.pdf
+!tests/*.pdf
+!backend/tests/*.pdf

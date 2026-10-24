@@ -100,20 +100,7 @@ def add_chunks(chunks):
     _vector_store.save_local(_INDEX_PATH)
 
 
-def search(query, top_k=5):
-    """
-    Find the top_k chunks most similar to the query text.
-    (LangChain's FAISS wrapper embeds the query internally -- you pass
-    plain text here, not a vector.)
-
-    Args:
-        query (str): The user's natural-language question.
-        top_k (int): How many matches to return.
-
-    Returns:
-        list[dict]: Each item has "text", "metadata", "score"
-            (lower score = more similar).
-    """
+def search(query, top_k=5, resource_id=None):
     global _vector_store
 
     if _vector_store is None:
@@ -122,17 +109,26 @@ def search(query, top_k=5):
     if _vector_store is None:
         return []
 
-    results = _vector_store.similarity_search_with_score(query, k=top_k)
+    fetch_k = max(top_k * 4, 20) if resource_id else top_k
+    try:
+        results = _vector_store.similarity_search_with_score(query, k=fetch_k)
+    except Exception:
+        results = []
 
     matched = []
     for doc, score in results:
+        if resource_id:
+            meta = doc.metadata or {}
+            if meta.get("resource_id") != resource_id:
+                continue
         matched.append({
             "text": doc.page_content,
             "metadata": doc.metadata,
             "score": float(score),
         })
+        if len(matched) >= top_k:
+            break
     return matched
-
 
 def count():
     """Utility: how many vectors are currently stored. Useful for debugging."""

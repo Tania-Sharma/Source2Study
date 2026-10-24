@@ -180,3 +180,46 @@ def add_web_resource(
         }
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+@router.get("/overview")
+def get_dashboard_overview(db: Session = Depends(get_db)):
+    """Return comprehensive system & learning overview stats."""
+    return crud.get_dashboard_overview_data(db)
+
+
+@router.get("/item/{resource_id}")
+@router.get("/{resource_id}")
+def get_resource_details(resource_id: str, db: Session = Depends(get_db)):
+    """Get single resource by id."""
+    r = crud.get_resource(db, resource_id)
+    if not r:
+        raise HTTPException(status_code=404, detail="Resource not found")
+    return {
+        "id": r.id,
+        "source_type": r.source_type,
+        "source_name": r.source_name,
+        "url": r.url,
+        "created_at": r.created_at,
+    }
+
+
+@router.delete("/{resource_id}")
+def delete_resource_by_id(resource_id: str, db: Session = Depends(get_db)):
+    """Delete a resource from database and remove its uploaded file if present."""
+    r = crud.get_resource(db, resource_id)
+    if not r:
+        raise HTTPException(status_code=404, detail="Resource not found")
+    if r.file_path and os.path.exists(r.file_path):
+        try:
+            os.remove(r.file_path)
+        except Exception:
+            pass
+
+    deleted = crud.delete_resource(db, resource_id)
+    if not deleted:
+        raise HTTPException(status_code=500, detail="Failed to delete resource")
+
+    return {
+        "status": "success",
+        "message": f"Resource {resource_id} deleted successfully."
+    }

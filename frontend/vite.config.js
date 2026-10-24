@@ -10,6 +10,7 @@ export default defineConfig({
       '/ai': 'http://localhost:8000',
       '/quiz': 'http://localhost:8000',
       '/resources': 'http://localhost:8000',
+      '/dashboard': 'http://localhost:8000',
       '/question-bank': 'http://localhost:8000',
       '/health': 'http://localhost:8000',
     }

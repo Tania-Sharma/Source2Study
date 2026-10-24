@@ -1,4 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import {
+  BookOpen,
+  Download,
+  Search,
+  FileSpreadsheet,
+  FileText,
+  Lightbulb,
+  BrainCircuit,
+  Award,
+  ChevronDown,
+  ChevronUp,
+  Layers,
+} from 'lucide-react';
 import { api } from '../api';
 
 export default function QuestionBankView({ papers, onSelectQuestionForAI, showToast }) {
@@ -40,19 +53,21 @@ export default function QuestionBankView({ papers, onSelectQuestionForAI, showTo
 
   return (
     <div>
+      {/* Header */}
       <div className="section-header">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+        <div className="section-header-row">
           <div>
             <h1 className="section-title">
-              <span>📚</span> Consolidated Question Bank
+              <BookOpen size={28} style={{ color: '#818cf8' }} />
+              <span>Consolidated Question Bank</span>
             </h1>
             <p className="section-subtitle">
-              Browse, filter, and export the unified collection of deduplicated questions across all papers.
+              Browse, search, and export the deduplicated master bank of questions extracted across all exam papers.
             </p>
           </div>
 
-          {/* Export Dropdown / Buttons */}
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          {/* Export Buttons */}
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
             <a
               href={api.getExportUrl('csv')}
               target="_blank"
@@ -60,7 +75,8 @@ export default function QuestionBankView({ papers, onSelectQuestionForAI, showTo
               className="btn btn-sm btn-secondary"
               download="question_bank.csv"
             >
-              📊 Export CSV
+              <Download size={14} />
+              <span>Export CSV</span>
             </a>
             <a
               href={api.getExportUrl('excel')}
@@ -69,7 +85,8 @@ export default function QuestionBankView({ papers, onSelectQuestionForAI, showTo
               className="btn btn-sm btn-secondary"
               download="question_bank.xlsx"
             >
-              📑 Export Excel
+              <FileSpreadsheet size={14} style={{ color: '#10b981' }} />
+              <span>Export Excel</span>
             </a>
             <a
               href={api.getExportUrl('pdf')}
@@ -78,54 +95,66 @@ export default function QuestionBankView({ papers, onSelectQuestionForAI, showTo
               className="btn btn-sm btn-primary"
               download="question_bank.pdf"
             >
-              📄 Export PDF
+              <FileText size={14} />
+              <span>Export PDF</span>
             </a>
           </div>
         </div>
       </div>
 
-      {/* Toolbar: Search and Filter */}
-      <div className="card toolbar">
-        <div style={{ display: 'flex', gap: '1rem', flex: 1, flexWrap: 'wrap' }}>
-          <input
-            type="text"
-            className="search-input"
-            style={{ flex: 1 }}
-            placeholder="Search questions by keyword..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      {/* Toolbar */}
+      <div className="card" style={{ marginBottom: '1.5rem', padding: '1rem 1.25rem' }}>
+        <div style={{ display: 'flex', gap: '1rem', flex: 1, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', gap: '0.75rem', flex: 1, minWidth: '280px' }}>
+            <div style={{ position: 'relative', flex: 1 }}>
+              <input
+                type="text"
+                className="input-text"
+                style={{ paddingLeft: '2.25rem' }}
+                placeholder="Search questions by keyword..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <Search
+                size={16}
+                style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}
+              />
+            </div>
 
-          <select
-            className="select-input"
-            value={selectedPaper}
-            onChange={(e) => setSelectedPaper(e.target.value)}
-          >
-            <option value="">All Question Papers</option>
-            {papers.map((p) => (
-              <option key={p.id} value={p.filename}>
-                {p.filename}
-              </option>
-            ))}
-          </select>
-        </div>
+            <select
+              className="select-input"
+              style={{ width: 'auto', minWidth: '200px' }}
+              value={selectedPaper}
+              onChange={(e) => setSelectedPaper(e.target.value)}
+            >
+              <option value="">All Question Papers</option>
+              {papers.map((p) => (
+                <option key={p.id} value={p.filename}>
+                  {p.title || p.filename}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-          Showing <strong>{questions.length}</strong> unique questions
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.88rem' }}>
+            Showing <strong>{questions.length}</strong> unique questions
+          </div>
         </div>
       </div>
 
       {/* Questions List */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-          Loading questions...
+          Loading question bank...
         </div>
       ) : questions.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '3rem 1rem' }}>
-          <div style={{ fontSize: '2rem', marginBottom: '0.75rem' }}>🔍</div>
-          <h3>No Questions Found</h3>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '0.25rem' }}>
-            Try adjusting your search filters or upload question papers.
+          <Search size={36} style={{ color: 'var(--text-muted)', marginBottom: '0.75rem', opacity: 0.5 }} />
+          <h3 style={{ fontSize: '1.15rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+            No Questions Found
+          </h3>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.25rem' }}>
+            Try adjusting your search filters or upload past question papers in the Upload tab.
           </p>
         </div>
       ) : (
@@ -133,67 +162,110 @@ export default function QuestionBankView({ papers, onSelectQuestionForAI, showTo
           {questions.map((q, idx) => {
             const isExpanded = !!expandedOccurrences[q.id];
             return (
-              <div key={q.id} className="question-item">
-                <div className="question-header">
-                  <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <div
+                key={q.id}
+                className="card"
+                style={{ padding: '1.25rem', transition: 'all 0.15s ease' }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: '0.75rem', flex: 1, minWidth: '280px' }}>
                     <span style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.9rem', minWidth: '24px' }}>
                       {idx + 1}.
                     </span>
-                    <div className="question-text">{q.canonical_text}</div>
+                    <div style={{ fontSize: '0.95rem', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1.5 }}>
+                      {q.canonical_text}
+                    </div>
                   </div>
 
-                  {/* AI Quick Actions */}
+                  {/* Quick AI Learning Actions */}
                   <div style={{ display: 'flex', gap: '0.4rem', flexShrink: 0 }}>
                     <button
                       className="btn btn-sm btn-secondary"
-                      style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
+                      style={{ fontSize: '0.78rem', padding: '0.3rem 0.6rem' }}
                       title="Explain this question simply"
                       onClick={() => onSelectQuestionForAI(q.canonical_text, 'explain')}
                     >
-                      💡 Explain
+                      <Lightbulb size={13} style={{ color: '#f59e0b' }} />
+                      <span>Explain</span>
                     </button>
+
                     <button
                       className="btn btn-sm btn-secondary"
-                      style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
-                      title="Ask AI study question"
+                      style={{ fontSize: '0.78rem', padding: '0.3rem 0.6rem' }}
+                      title="Write and evaluate my answer"
+                      onClick={() => onSelectQuestionForAI(q.canonical_text, 'evaluate')}
+                    >
+                      <Award size={13} style={{ color: '#8b5cf6' }} />
+                      <span>Evaluate</span>
+                    </button>
+
+                    <button
+                      className="btn btn-sm btn-primary"
+                      style={{ fontSize: '0.78rem', padding: '0.3rem 0.6rem' }}
+                      title="Ask AI study tutor"
                       onClick={() => onSelectQuestionForAI(q.canonical_text, 'ask')}
                     >
-                      ✨ Ask AI
+                      <BrainCircuit size={13} />
+                      <span>Ask AI</span>
                     </button>
                   </div>
                 </div>
 
-                <div className="question-meta">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.75rem', flexWrap: 'wrap' }}>
                   {q.marks && <span className="badge badge-info">{q.marks}</span>}
                   {q.section && <span className="badge badge-warning">{q.section}</span>}
-                  {q.topic && <span className="badge badge-ai">{q.topic}</span>}
+                  {q.topic && <span className="badge badge-primary">{q.topic}</span>}
 
                   <button
                     onClick={() => toggleOccurrences(q.id)}
                     style={{
                       background: 'none',
                       border: 'none',
-                      color: 'var(--primary)',
+                      color: '#818cf8',
                       cursor: 'pointer',
                       fontSize: '0.8rem',
                       fontWeight: 600,
                       marginLeft: 'auto',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.3rem',
                     }}
                   >
-                    🔁 Appears in {q.occurrences_count} paper{q.occurrences_count > 1 ? 's' : ''} {isExpanded ? '▲' : '▼'}
+                    <span>
+                      Appears in {q.occurrences_count} paper{q.occurrences_count > 1 ? 's' : ''}
+                    </span>
+                    {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                   </button>
                 </div>
 
                 {/* Expandable Occurrences */}
                 {isExpanded && (
-                  <div className="occurrences-box">
-                    <div style={{ fontWeight: 600, marginBottom: '0.4rem', color: 'var(--text-primary)' }}>
-                      Occurrences in Source Papers:
+                  <div
+                    style={{
+                      marginTop: '0.85rem',
+                      padding: '0.75rem 1rem',
+                      background: 'var(--bg-input)',
+                      borderRadius: 'var(--radius-sm)',
+                      border: '1px solid var(--border)',
+                      fontSize: '0.85rem',
+                    }}
+                  >
+                    <div style={{ fontWeight: 600, marginBottom: '0.4rem', color: 'var(--text-secondary)' }}>
+                      Exam Paper Occurrences:
                     </div>
                     {q.occurrences.map((occ, oIdx) => (
-                      <div key={oIdx} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.2rem 0' }}>
+                      <div
+                        key={oIdx}
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          padding: '0.3rem 0',
+                          borderBottom: oIdx < q.occurrences.length - 1 ? '1px solid rgba(255, 255, 255, 0.04)' : 'none',
+                        }}
+                      >
                         <span>
-                          <strong>{occ.paper_name}</strong> {occ.original_number ? `— ${occ.original_number}` : ''}
+                          <strong style={{ color: 'var(--text-primary)' }}>{occ.paper_name}</strong>
+                          {occ.original_number ? ` — Q.${occ.original_number}` : ''}
                         </span>
                         <span style={{ color: 'var(--text-muted)' }}>{occ.marks || ''}</span>
                       </div>

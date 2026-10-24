@@ -58,6 +58,19 @@ def delete_conversation(db: Session, conversation_id: str) -> bool:
     return True
 
 
+def update_conversation_title(
+    db: Session, conversation_id: str, title: str
+) -> Optional[ConversationModel]:
+    conv = get_conversation(db, conversation_id)
+    if not conv:
+        return None
+    conv.title = title.strip()
+    conv.updated_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(conv)
+    return conv
+
+
 def add_message(
     db: Session, conversation_id: str, role: str, content: str
 ) -> MessageModel:
@@ -119,6 +132,15 @@ def list_resources(db: Session) -> List[ResourceModel]:
 
 def get_resource(db: Session, resource_id: str) -> Optional[ResourceModel]:
     return db.query(ResourceModel).filter(ResourceModel.id == resource_id).first()
+
+
+def delete_resource(db: Session, resource_id: str) -> bool:
+    res = get_resource(db, resource_id)
+    if not res:
+        return False
+    db.delete(res)
+    db.commit()
+    return True
 
 
 # ==========================================
@@ -332,3 +354,54 @@ def separate_question(db: Session, question_id: str) -> Optional[QuestionModel]:
     db.commit()
     db.refresh(q)
     return q
+
+
+
+def get_dashboard_overview_data(db: Session) -> Dict[str, Any]:
+    q_stats = get_question_stats(db)
+    total_resources = db.query(ResourceModel).count()
+    total_conversations = db.query(ConversationModel).count()
+    total_messages = db.query(MessageModel).count()
+
+    recent_resources_models = (
+        db.query(ResourceModel)
+        .order_by(ResourceModel.created_at.desc())
+        .limit(5)
+        .all()
+    )
+    recent_resources = [
+        {
+            "id": r.id,
+            "source_type": r.source_type,
+            "source_name": r.source_name,
+            "url": r.url,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+        }
+        for r in recent_resources_models
+    ]
+
+    recent_conversations_models = (
+        db.query(ConversationModel)
+        .order_by(ConversationModel.updated_at.desc())
+        .limit(5)
+        .all()
+    )
+    recent_conversations = [
+        {
+            "conversation_id": c.id,
+            "title": c.title,
+            "resource_id": c.resource_id,
+            "message_count": len(c.messages),
+            "updated_at": c.updated_at.isoformat() if c.updated_at else None,
+        }
+        for c in recent_conversations_models
+    ]
+
+    return {
+        "total_resources": total_resources,
+        "total_conversations": total_conversations,
+        "total_messages": total_messages,
+        "question_stats": q_stats,
+        "recent_resources": recent_resources,
+        "recent_conversations": recent_conversations,
+    }
