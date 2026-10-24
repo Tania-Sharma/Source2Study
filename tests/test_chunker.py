@@ -106,3 +106,15 @@ def test_chunk_text_last_chunk_can_be_smaller():
     last_chunk = result[-1]
     assert last_chunk["word_count"] <= 5
     assert last_chunk["word_count"] > 0
+
+def test_chunk_text_no_redundant_subset_chunk_at_end():
+    text = " ".join(f"w{i}" for i in range(11))
+
+    result = chunk_text(
+        text,
+        chunk_size=5,
+        chunk_overlap=2
+    )
+
+    assert len(result) == 3
+    assert result[-1]["text"] == "w6 w7 w8 w9 w10"

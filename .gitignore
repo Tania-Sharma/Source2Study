@@ -1,11 +1,29 @@
+
+# Python virtual environment
 .venv/
+venv/
+
+# Python cache files
 __pycache__/
-*.pyc
-backend/rag/faiss_index/
-backend/rag/chroma_db/
-*.pdf
-!backend/tests/*.pdf
-chroma_db/
+*.py[cod]
+
+# Test cache
+.pytest_cache/
+
+# Environment variables and secrets
 .env
 .env.*
 !.env.example
+
+# RAG databases and indexes
+backend/rag/faiss_index/
+backend/rag/chroma_db/
+chroma_db/
+
+# Uploaded files
+uploads/
+
+# PDF files: ignore all except test PDFs
+*.pdf
+!backend/tests/*.pdf
+

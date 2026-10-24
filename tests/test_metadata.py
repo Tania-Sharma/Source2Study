@@ -1,5 +1,5 @@
 import pytest
-
+import docx
 from backend.resource_processing.pdf_handler import extract_pdf
 from backend.text_processing.metadata import build_chunks_from_pdf
 
@@ -96,3 +96,62 @@ def test_build_chunks_from_pdf_empty_resource_id_raises_error():
 
     with pytest.raises(ValueError):
         build_chunks_from_pdf(pdf_result)
+
+
+from backend.resource_processing.docx_handler import extract_docx
+from backend.text_processing.metadata import build_chunks_from_docx
+
+
+def test_build_chunks_from_docx_basic_flow(tmp_path):
+    docx_path = tmp_path / "sample.docx"
+    document = docx.Document()
+    document.add_heading("Test Document", level=1)
+    document.add_paragraph("word " * 300)  # forces multiple chunks
+    document.save(str(docx_path))
+
+    docx_result = extract_docx(str(docx_path), resource_id="R002")
+    chunks = build_chunks_from_docx(docx_result)
+
+    assert len(chunks) > 0
+    for chunk in chunks:
+        assert chunk["metadata"]["page_number"] is None
+        assert chunk["metadata"]["source_type"] == "docx"
+        assert chunk["metadata"]["resource_id"] == "R002"
+        assert chunk["chunk_id"].startswith("R002_C")
+
+
+def test_build_chunks_from_docx_missing_resource_id_raises_error(tmp_path):
+    docx_path = tmp_path / "sample.docx"
+    document = docx.Document()
+    document.add_paragraph("Some content here.")
+    document.save(str(docx_path))
+
+    docx_result = extract_docx(str(docx_path))  # no resource_id
+
+    with pytest.raises(ValueError):
+        build_chunks_from_docx(docx_result)
+
+
+def test_build_chunks_from_docx_table_gets_own_chunk(tmp_path):
+    docx_path = tmp_path / "sample.docx"
+    document = docx.Document()
+    document.add_paragraph("Some intro text before the table.")
+
+    table = document.add_table(rows=2, cols=2)
+    table.cell(0, 0).text = "Name"
+    table.cell(0, 1).text = "Score"
+    table.cell(1, 0).text = "Alice"
+    table.cell(1, 1).text = "90"
+
+    document.add_paragraph("Some text after the table.")
+    document.save(str(docx_path))
+
+    docx_result = extract_docx(str(docx_path), resource_id="R003")
+    chunks = build_chunks_from_docx(docx_result)
+
+    table_chunks = [c for c in chunks if c["metadata"]["content_type"] == "table"]
+    text_chunks = [c for c in chunks if c["metadata"]["content_type"] == "text"]
+
+    assert len(table_chunks) == 1
+    assert len(text_chunks) >= 1
+    assert "Alice" in table_chunks[0]["text"]
